@@ -1,0 +1,74 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+  mssql:
+    datasource:
+      jdbc-url: jdbc:sqlserver://localhost:1433;databaseName=etimetracklite1;encrypt=false;trustServerCertificate=true
+      username: sa
+      password: YourStrong@Passw0rd
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 2
+        idle-timeout: 300000
+        connection-timeout: 20000
+        max-lifetime: 1200000
+        connection-test-query: SELECT 1
+        validation-timeout: 5000
+        pool-name: mssql-connection-pool
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.SQLServerDialect
+          default_schema: dbo
+          format_sql: false
+          show_sql: false
+
+  mysql:
+    datasource:
+      jdbc-url: jdbc:mysql://localhost:3306/leo
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 5
+        minimum-idle: 2
+        idle-timeout: 300000
+        connection-timeout: 20000
+        max-lifetime: 1200000
+        connection-test-query: SELECT 1
+        validation-timeout: 5000
+        pool-name: mysql-connection-pool
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.MySQLDialect
+          format_sql: false
+          show_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.udyata.syncer: INFO
+    org.hibernate: INFO
+    com.zaxxer.hikari: INFO
+    org.springframework.transaction: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+sync:
+  interval:
+#    milliseconds: 300000  # 5 minutes
+    milliseconds: 60000  # 1 minute for testing
+  batch:
+    size: 50
+    timeout: 30  # seconds
