@@ -14,7 +14,7 @@ spring:
 
   mssql:
     datasource:
-      jdbc-url: jdbc:sqlserver://HR;databaseName=etimetracklite1;encrypt=false;trustServerCertificate=true
+      jdbc-url: jdbc:sqlserver://host.docker.internal:1433;databaseName=etimetracklite1;encrypt=false;trustServerCertificate=true
       username: sa
       password: admin@123
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
@@ -27,16 +27,10 @@ spring:
         connection-test-query: SELECT 1
         validation-timeout: 5000
         pool-name: mssql-connection-pool
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.SQLServerDialect
-          default_schema: dbo
-          format_sql: false
-          show_sql: false
 
   mysql:
     datasource:
-      jdbc-url: jdbc:mysql://localhost:3306/leo
+      jdbc-url: jdbc:mysql://host.docker.internal:3306/leo
       username: root
       password:
       driver-class-name: com.mysql.cj.jdbc.Driver
@@ -49,26 +43,20 @@ spring:
         connection-test-query: SELECT 1
         validation-timeout: 5000
         pool-name: mysql-connection-pool
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.MySQLDialect
-          format_sql: false
-          show_sql: false
 
 logging:
+  file:
+    name: /app/logs/syncer.log
   level:
     root: INFO
     com.udyata.syncer: INFO
-    org.hibernate: INFO
-    com.zaxxer.hikari: INFO
-    org.springframework.transaction: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 sync:
   interval:
-    milliseconds: 300000  # 5 minutes
-#    milliseconds: 60000  # 1 minute for testing
+    milliseconds: 300000
   batch:
     size: 50
-    timeout: 30  # seconds
+    timeout: 30

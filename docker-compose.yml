@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  syncer-app:
+    image: udyata/syncer:s1
+    container_name: syncer-app
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Kolkata
+    volumes:
+      - ./config:/app/config
+    networks:
+      - db-network
+    restart: unless-stopped
+
+networks:
+  db-network:
+    driver: bridge

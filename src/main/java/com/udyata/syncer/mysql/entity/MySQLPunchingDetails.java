@@ -2,7 +2,7 @@ package com.udyata.syncer.mysql.entity;
 
 import jakarta.persistence.*;
 import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -10,10 +10,14 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "hr_punching_dtls")
 public class MySQLPunchingDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
     @Column(name = "emp_code")
@@ -36,4 +40,7 @@ public class MySQLPunchingDetails {
 
     @Column(name = "processed_flg")
     private String processedFlag;
+
+    @Column(name = "device_log_id")
+    private Integer deviceLogId;
 }
