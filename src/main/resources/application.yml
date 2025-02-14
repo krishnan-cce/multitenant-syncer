@@ -19,11 +19,12 @@ spring:
       password: admin@123
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
-        maximum-pool-size: 5
-        minimum-idle: 2
+        maximum-pool-size: 10
+        minimum-idle: 5
         idle-timeout: 300000
         connection-timeout: 20000
         max-lifetime: 1200000
+        leak-detection-threshold: 60000
         connection-test-query: SELECT 1
         validation-timeout: 5000
         pool-name: mssql-connection-pool
@@ -41,14 +42,37 @@ spring:
       password:
       driver-class-name: com.mysql.cj.jdbc.Driver
       hikari:
-        maximum-pool-size: 5
-        minimum-idle: 2
+        maximum-pool-size: 10
+        minimum-idle: 5
         idle-timeout: 300000
         connection-timeout: 20000
         max-lifetime: 1200000
+        leak-detection-threshold: 60000
         connection-test-query: SELECT 1
         validation-timeout: 5000
         pool-name: mysql-connection-pool
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.MySQLDialect
+          format_sql: false
+          show_sql: false
+
+  mysql-temp:
+    datasource:
+      jdbc-url: jdbc:mysql://localhost:3306/leo_temp
+      username: root
+      password:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+        idle-timeout: 300000
+        connection-timeout: 20000
+        max-lifetime: 1200000
+        leak-detection-threshold: 60000
+        connection-test-query: SELECT 1
+        validation-timeout: 5000
+        pool-name: mysql-temp-connection-pool
       properties:
         hibernate:
           dialect: org.hibernate.dialect.MySQLDialect
@@ -68,7 +92,7 @@ logging:
 sync:
   interval:
     milliseconds: 300000  # 5 minutes
-#    milliseconds: 60000  # 1 minute for testing
+#    milliseconds: 60000  # 1 minute for testing : any-desk-id=1940370802
   batch:
     size: 50
     timeout: 30  # seconds

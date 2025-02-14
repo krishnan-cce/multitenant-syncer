@@ -21,6 +21,10 @@ public class TransactionConfig {
     @Qualifier("mysqlTransactionManager")
     private PlatformTransactionManager mysqlTransactionManager;
 
+    @Autowired
+    @Qualifier("mysqlTempTransactionManager")
+    private PlatformTransactionManager mysqlTempTransactionManager;
+
     @Bean(name = "mssqlTransactionTemplate")
     public TransactionTemplate mssqlTransactionTemplate() {
         TransactionTemplate template = new TransactionTemplate(mssqlTransactionManager);
@@ -33,6 +37,14 @@ public class TransactionConfig {
     @Bean(name = "mysqlTransactionTemplate")
     public TransactionTemplate mysqlTransactionTemplate() {
         TransactionTemplate template = new TransactionTemplate(mysqlTransactionManager);
+        template.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        template.setTimeout(30);
+        return template;
+    }
+
+    @Bean(name = "mysqlTempTransactionTemplate")
+    public TransactionTemplate mysqlTempTransactionTemplate() {
+        TransactionTemplate template = new TransactionTemplate(mysqlTempTransactionManager);
         template.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         template.setTimeout(30);
         return template;
