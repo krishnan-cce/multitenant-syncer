@@ -2,6 +2,7 @@ package com.udyata.syncer.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -21,7 +22,7 @@ public class TransactionConfig {
     @Qualifier("mysqlTransactionManager")
     private PlatformTransactionManager mysqlTransactionManager;
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("mysqlTempTransactionManager")
     private PlatformTransactionManager mysqlTempTransactionManager;
 
@@ -43,6 +44,7 @@ public class TransactionConfig {
     }
 
     @Bean(name = "mysqlTempTransactionTemplate")
+    @ConditionalOnBean(name = "mysqlTempTransactionManager")
     public TransactionTemplate mysqlTempTransactionTemplate() {
         TransactionTemplate template = new TransactionTemplate(mysqlTempTransactionManager);
         template.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);

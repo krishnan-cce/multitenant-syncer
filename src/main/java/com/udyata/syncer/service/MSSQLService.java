@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class MSSQLService {
+
+    @Value("${spring.mssql.schema}")
+    private String schemaName;
+
     @PersistenceContext(unitName = "mssqlEntityManager")
     private EntityManager entityManager;
 
@@ -30,15 +35,15 @@ public class MSSQLService {
                 currentDate.getMonthValue(),
                 currentDate.getYear());
 
-        log.info("Fetching unprocessed logs from table: {}", tableName);
+        log.info("Fetching unprocessed logs from table: {}.{}", schemaName, tableName);
 
         try {
             // First, get total count
             String countSql = String.format("""
                     SELECT COUNT(*) 
-                    FROM [dbo].[%s] dl WITH (NOLOCK)
+                    FROM [%s].[%s] dl WITH (NOLOCK)
                     WHERE dl.LogDate >= :startOfDay
-                    """, tableName);
+                    """, schemaName, tableName);
 
             // Fix: Handle count result as Long
             Number count = (Number) entityManager.createNativeQuery(countSql)
@@ -55,11 +60,11 @@ public class MSSQLService {
             // SQL Server pagination query
             String sql = String.format("""
                     SELECT dl.* 
-                    FROM [dbo].[%s] dl WITH (NOLOCK)
+                    FROM [%s].[%s] dl WITH (NOLOCK)
                     WHERE dl.LogDate >= :startOfDay
                     ORDER BY dl.LogDate OFFSET :offset ROWS 
                     FETCH NEXT :pageSize ROWS ONLY
-                    """, tableName);
+                    """, schemaName, tableName);
 
             while (true) {
                 try {
@@ -96,36 +101,4 @@ public class MSSQLService {
     }
 }
 
-//@Service
-//@RequiredArgsConstructor
-//@Slf4j
-//public class MSSQLService {
-//    @PersistenceContext(unitName = "mssqlEntityManager")
-//    private EntityManager entityManager;
-//
-//    @Transactional(readOnly = true)
-//    public List<MSSQLDeviceLogs> getUnprocessedLogs() {
-//        LocalDateTime currentDate = LocalDateTime.now();
-//        LocalDateTime startOfDay = currentDate.toLocalDate().atStartOfDay();
-//
-//        String tableName = String.format("DeviceLogs_%d_%d",
-//                currentDate.getMonthValue(),
-//                currentDate.getYear());
-//
-//        String sql = String.format("""
-//            SELECT TOP 1000 dl.*
-//            FROM [dbo].[%s] dl WITH (NOLOCK)
-//            WHERE dl.LogDate >= :startOfDay
-//            ORDER BY dl.LogDate
-//            """, tableName);
-//
-//        try {
-//            return entityManager.createNativeQuery(sql, MSSQLDeviceLogs.class)
-//                    .setParameter("startOfDay", startOfDay)
-//                    .getResultList();
-//        } catch (Exception e) {
-//            log.error("Error executing SQL: {}", e.getMessage());
-//            throw e;
-//        }
-//    }
-//}
+

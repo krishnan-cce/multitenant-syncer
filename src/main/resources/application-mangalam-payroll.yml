@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: mangalam-payroll
 
   jpa:
     properties:
@@ -16,11 +14,11 @@ spring:
       ddl-auto: none
 
   mssql:
-    schema: dbo
+    schema: essl
     datasource:
-      jdbc-url: jdbc:sqlserver://HR;databaseName=etimetracklite1;encrypt=false;trustServerCertificate=true
-      username: sa
-      password: admin@123
+      jdbc-url: jdbc:sqlserver://WIN-4VQ8KOJ9KK3;instanceName=SQLEXPRESS;databaseName=etimetracklite1;encrypt=false;trustServerCertificate=true;
+      username: essl
+      password: essl@123
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10
@@ -41,7 +39,7 @@ spring:
 
   mysql:
     datasource:
-      jdbc-url: jdbc:mysql://localhost:3306/leo
+      jdbc-url: jdbc:mysql://localhost:3306/mangalam_payroll
       username: root
       password:
       driver-class-name: com.mysql.cj.jdbc.Driver
@@ -60,29 +58,8 @@ spring:
           dialect: org.hibernate.dialect.MySQLDialect
           format_sql: false
           show_sql: false
-
   mysql-temp:
-    enabled: true
-    datasource:
-      jdbc-url: jdbc:mysql://localhost:3306/leo_temp
-      username: root
-      password:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      hikari:
-        maximum-pool-size: 10
-        minimum-idle: 5
-        idle-timeout: 300000
-        connection-timeout: 20000
-        max-lifetime: 1200000
-        leak-detection-threshold: 60000
-        connection-test-query: SELECT 1
-        validation-timeout: 5000
-        pool-name: mysql-temp-connection-pool
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.MySQLDialect
-          format_sql: false
-          show_sql: false
+    enabled: false
 
 logging:
   level:
@@ -97,7 +74,7 @@ logging:
 sync:
   interval:
     milliseconds: 300000  # 5 minutes
-#    milliseconds: 60000  # 1 minute for testing : any-desk-id=1940370802
+  #    milliseconds: 60000  # 1 minute for testing : any-desk-id=1940370802
   batch:
     size: 50
     timeout: 30  # seconds

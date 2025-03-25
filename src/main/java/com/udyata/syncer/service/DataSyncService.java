@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +26,26 @@ import java.util.Set;
 
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DataSyncService {
     private final MSSQLService mssqlService;
     private final MySQLPunchingRepository mysqlRepository;
     private final MySQLTempPunchingRepository mysqlTempRepository;
+    private final boolean tempDbEnabled;
+
+    @Autowired
+    public DataSyncService(
+            MSSQLService mssqlService,
+            MySQLPunchingRepository mysqlRepository,
+            @Autowired(required = false) MySQLTempPunchingRepository mysqlTempRepository,
+            @Value("${spring.mysql-temp.enabled:false}") boolean tempDbEnabled) {
+        this.mssqlService = mssqlService;
+        this.mysqlRepository = mysqlRepository;
+        this.mysqlTempRepository = mysqlTempRepository;
+        this.tempDbEnabled = tempDbEnabled;
+
+        log.info("Data Sync Service initialized with tempDbEnabled: {}", tempDbEnabled);
+    }
 
     @Scheduled(fixedRateString = "${sync.interval.milliseconds}")
     @Transactional
@@ -62,13 +77,16 @@ public class DataSyncService {
         log.info("Processing {} unprocessed logs", unprocessedLogs.size());
         LocalDateTime currentTime = LocalDateTime.now();
         List<MySQLPunchingDetails> batchToInsert = new ArrayList<>();
-        List<MySQLTempPunchingDetails> tempBatchToInsert = new ArrayList<>();
+        List<MySQLTempPunchingDetails> tempBatchToInsert = tempDbEnabled ? new ArrayList<>() : null;
         int batchSize = 50;
 
         for (MSSQLDeviceLogs mssqlLog : unprocessedLogs) {
             if (!processedIds.contains(mssqlLog.getDeviceLogId())) {
                 batchToInsert.add(createPunchingDetails(mssqlLog, currentTime));
-                tempBatchToInsert.add(createTempPunchingDetails(mssqlLog, currentTime));
+
+                if (tempDbEnabled) {
+                    tempBatchToInsert.add(createTempPunchingDetails(mssqlLog, currentTime));
+                }
 
                 if (batchToInsert.size() >= batchSize) {
                     saveAndClearBatch(batchToInsert, tempBatchToInsert);
@@ -83,10 +101,14 @@ public class DataSyncService {
 
     private void saveAndClearBatch(List<MySQLPunchingDetails> batch, List<MySQLTempPunchingDetails> tempBatch) {
         mysqlRepository.saveAll(batch);
-        mysqlTempRepository.saveAll(tempBatch);
+
+        if (tempDbEnabled && tempBatch != null && !tempBatch.isEmpty()) {
+            mysqlTempRepository.saveAll(tempBatch);
+            tempBatch.clear();
+        }
+
         log.debug("Saved batch of {} records", batch.size());
         batch.clear();
-        tempBatch.clear();
     }
 
     private MySQLPunchingDetails createPunchingDetails(MSSQLDeviceLogs log, LocalDateTime currentTime) {
@@ -116,114 +138,5 @@ public class DataSyncService {
     }
 }
 
-//@Service
-//@RequiredArgsConstructor
-//@Slf4j
-//public class DataSyncService {
-//    private final MSSQLService mssqlService;
-//    private final MySQLPunchingRepository mysqlRepository;
-//    private final MySQLTempPunchingRepository mysqlTempRepository;
-//
-//    @Autowired
-//    @Qualifier("mssqlTransactionTemplate")
-//    private TransactionTemplate mssqlTransactionTemplate;
-//
-//    @Autowired
-//    @Qualifier("mysqlTransactionTemplate")
-//    private TransactionTemplate mysqlTransactionTemplate;
-//
-//    @Autowired
-//    @Qualifier("mysqlTempTransactionTemplate")
-//    private TransactionTemplate mysqlTempTransactionTemplate;
-//
-//    @Scheduled(fixedRateString = "${sync.interval.milliseconds}")
-//    public void syncData() {
-//        try {
-//            log.info("Starting data synchronization process");
-//            LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
-//
-//            Set<Integer> processedIds = mysqlRepository.findProcessedDeviceLogIds(startOfDay);
-//            log.info("Found {} processed records for today", processedIds.size());
-//
-//            List<MSSQLDeviceLogs> unprocessedLogs = mssqlTransactionTemplate.execute(status -> {
-//                return mssqlService.getUnprocessedLogs();
-//            });
-//
-//            if (unprocessedLogs != null && !unprocessedLogs.isEmpty()) {
-//                log.info("Found {} unprocessed logs to sync", unprocessedLogs.size());
-//                int chunkSize = 1000;
-//                for (int i = 0; i < unprocessedLogs.size(); i += chunkSize) {
-//                    int end = Math.min(i + chunkSize, unprocessedLogs.size());
-//                    List<MSSQLDeviceLogs> chunk = unprocessedLogs.subList(i, end);
-//
-//                    mysqlTransactionTemplate.execute(status -> {
-//                        processUnprocessedLogs(chunk, processedIds);
-//                        return null;
-//                    });
-//                }
-//            } else {
-//                log.info("No new logs to process");
-//            }
-//        } catch (Exception e) {
-//            log.error("Error during sync: ", e);
-//            throw e;
-//        }
-//    }
-//
-//    protected void processUnprocessedLogs(List<MSSQLDeviceLogs> unprocessedLogs, Set<Integer> processedIds) {
-//        log.info("Processing {} unprocessed logs", unprocessedLogs.size());
-//        LocalDateTime currentTime = LocalDateTime.now();
-//        List<MySQLPunchingDetails> batchToInsert = new ArrayList<>();
-//        List<MySQLTempPunchingDetails> tempBatchToInsert = new ArrayList<>();
-//        int batchSize = 50;
-//        int totalProcessed = 0;
-//
-//        for (MSSQLDeviceLogs mssqlLog : unprocessedLogs) {
-//            if (!processedIds.contains(mssqlLog.getDeviceLogId())) {
-//                // Create main DB entity
-//                MySQLPunchingDetails punchingDetails = MySQLPunchingDetails.builder()
-//                        .empCode(mssqlLog.getUserId())
-//                        .punchingDate(mssqlLog.getLogDate())
-//                        .punchingMode(mssqlLog.getDirection())
-//                        .entryDate(currentTime)
-//                        .deviceName(String.valueOf(mssqlLog.getDeviceLogId()))
-//                        .deviceLogId(mssqlLog.getDeviceLogId())
-//                        .locationName(mssqlLog.getLocationAddress())
-//                        .processedFlag("N")
-//                        .build();
-//
-//                // Create temp DB entity
-//                MySQLTempPunchingDetails tempPunchingDetails = MySQLTempPunchingDetails.builder()
-//                        .empCode(mssqlLog.getUserId())
-//                        .punchingDate(mssqlLog.getLogDate())
-//                        .punchingMode(mssqlLog.getDirection())
-//                        .entryDate(currentTime)
-//                        .deviceName(String.valueOf(mssqlLog.getDeviceLogId()))
-//                        .deviceLogId(mssqlLog.getDeviceLogId())
-//                        .locationName(mssqlLog.getLocationAddress())
-//                        .processedFlag("N")
-//                        .build();
-//
-//                batchToInsert.add(punchingDetails);
-//                tempBatchToInsert.add(tempPunchingDetails);
-//
-//                if (batchToInsert.size() >= batchSize) {
-//                    mysqlRepository.saveAll(batchToInsert);
-//                    mysqlTempRepository.saveAll(tempBatchToInsert);
-//                    totalProcessed += batchToInsert.size();
-//                    batchToInsert.clear();
-//                    tempBatchToInsert.clear();
-//                }
-//            }
-//        }
-//
-//        if (!batchToInsert.isEmpty()) {
-//            mysqlRepository.saveAll(batchToInsert);
-//            mysqlTempRepository.saveAll(tempBatchToInsert);
-//            totalProcessed += batchToInsert.size();
-//        }
-//
-//        log.info("Successfully synced {} records to both databases", totalProcessed);
-//    }
-//}
+
 

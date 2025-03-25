@@ -2,6 +2,7 @@ package com.udyata.syncer.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,7 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 
 @Configuration
+@ConditionalOnProperty(prefix = "spring", name = "mysql-temp.enabled", havingValue = "true", matchIfMissing = false)
 @EnableJpaRepositories(
         basePackages = "com.udyata.syncer.mysqltemp.repository",
         entityManagerFactoryRef = "mysqlTempEntityManager",
